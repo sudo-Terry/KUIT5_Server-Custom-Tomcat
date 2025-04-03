@@ -1,5 +1,7 @@
 package webserver;
 
+import db.MemoryUserRepository;
+import model.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -10,6 +12,7 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.util.Objects;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
@@ -45,14 +48,14 @@ public class RequestHandlerTest {
     }
 
     @Test
-    void testRunningPOST() throws IOException {
+    void testRunningPOSTSignUp() throws IOException {
         String postRequest = """
             POST /user/signup HTTP/1.1\r
             Host: localhost\r
             Content-Type: application/x-www-form-urlencoded\r
             Content-Length: 29\r
             \r
-            username=testUser&password=1234&name=greenjoa&email=hello@world
+            userId=testUser&password=1234&name=greenjoa&email=hello@world
             """;
 
         try (ServerSocket serverSocket = new ServerSocket(0)) {
@@ -73,6 +76,81 @@ public class RequestHandlerTest {
                 String response = new String(clientInputStream.readAllBytes());
 
                 assertTrue(response.contains("HTTP/1.1 302 Found"));
+            }
+        }
+    }
+
+    @Test
+    void testRunningPOSTSignInSuccess() throws IOException {
+        String postRequest = """
+            POST /user/login HTTP/1.1\r
+            Host: localhost\r
+            Content-Type: application/x-www-form-urlencoded\r
+            Content-Length: 29\r
+            \r
+            userId=testUser&password=1234
+            """;
+        // 유저 생성
+        MemoryUserRepository.getInstance().addUser( new User(
+                "testUser",
+                "1234",
+                "greenjoa",
+                "Hello@World"
+        ));
+
+        try (ServerSocket serverSocket = new ServerSocket(0)) {
+            // 사용 가능한 포트 찾기
+            int port = serverSocket.getLocalPort();
+
+            try (Socket clientSocket = new Socket("localhost", port);
+                 Socket serverSideSocket = serverSocket.accept()) {
+
+                OutputStream clientOutputStream = clientSocket.getOutputStream();
+                clientOutputStream.write(postRequest.getBytes());
+                clientOutputStream.flush();
+
+                RequestHandler requestHandler = new RequestHandler(serverSideSocket);
+                requestHandler.run();
+
+                InputStream clientInputStream = clientSocket.getInputStream();
+                String response = new String(clientInputStream.readAllBytes());
+
+                assertTrue(response.contains("HTTP/1.1 302 Found"));
+                assertTrue(response.contains("Set-Cookie: logined=true;"));
+            }
+        }
+    }
+
+    @Test
+    void testRunningPOSTSignInFail() throws IOException {
+        String postRequest = """
+            POST /user/login HTTP/1.1\r
+            Host: localhost\r
+            Content-Type: application/x-www-form-urlencoded\r
+            Content-Length: 29\r
+            \r
+            userId=testUser2&password=12345
+            """;
+
+        try (ServerSocket serverSocket = new ServerSocket(0)) {
+            // 사용 가능한 포트 찾기
+            int port = serverSocket.getLocalPort();
+
+            try (Socket clientSocket = new Socket("localhost", port);
+                 Socket serverSideSocket = serverSocket.accept()) {
+
+                OutputStream clientOutputStream = clientSocket.getOutputStream();
+                clientOutputStream.write(postRequest.getBytes());
+                clientOutputStream.flush();
+
+                RequestHandler requestHandler = new RequestHandler(serverSideSocket);
+                requestHandler.run();
+
+                InputStream clientInputStream = clientSocket.getInputStream();
+                String response = new String(clientInputStream.readAllBytes());
+
+                assertTrue(response.contains("HTTP/1.1 302 Found"));
+                assertFalse(response.contains("Set-Cookie: logined=true;"));
             }
         }
     }

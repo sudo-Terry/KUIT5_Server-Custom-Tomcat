@@ -18,19 +18,6 @@ class HttpResponseGeneratorTest {
     }
 
     @Test
-    void testGenerateHeader_302_Found() {
-        String expected = """
-                HTTP/1.1 302 Found\r
-                Location: /index.html\r
-                Content-Length: 0\r
-                Connection: close\r
-                \r
-                """;
-        String actual = HttpResponseGenerator.generateHeader("302", 0);
-        assertEquals(expected, actual);
-    }
-
-    @Test
     void testGenerateHeader_404_NotFound() {
         String expected = """
                 HTTP/1.1 404 Not Found\r
@@ -41,6 +28,42 @@ class HttpResponseGeneratorTest {
         String actual = HttpResponseGenerator.generateHeader("404", 50);
         assertEquals(expected, actual);
     }
+
+    @Test
+    void testGenerateHeader302_LoginSuccess() {
+        String redirectPath = "/home";
+        boolean loginSuccess = true;
+        String expectedHeader = """
+                HTTP/1.1 302 Found\r
+                Location: /home\r
+                Content-Length: 0\r
+                Connection: close\r
+                Set-Cookie: logined=true; Path=/; HttpOnly\\r
+                \r
+                """;
+
+        String actualHeader = HttpResponseGenerator.generateHeader("302", redirectPath, loginSuccess);
+
+        assertEquals(expectedHeader, actualHeader);
+    }
+
+    @Test
+    void testGenerateHeader302_LoginFailure() {
+        String redirectPath = "/login";
+        boolean loginSuccess = false;
+        String expectedHeader = """
+                HTTP/1.1 302 Found\r
+                Location: /login\r
+                Content-Length: 0\r
+                Connection: close\r
+                \r
+                """;
+
+        String actualHeader = HttpResponseGenerator.generateHeader("302", redirectPath, loginSuccess);
+
+        assertEquals(expectedHeader, actualHeader);
+    }
+
 
     @Test
     void testGenerateHeader_NullResponseCode_ShouldThrowException() {

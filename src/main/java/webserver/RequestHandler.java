@@ -94,6 +94,8 @@ public class RequestHandler implements Runnable{
             throw new RuntimeException("Invalid request path");
         }else if (requestPath.equals("/user/signup")) {
             handleSignUp(requestBody, dos);
+        }else if (requestPath.equals("/user/login")) {
+            handleSignIn(requestBody, dos);
         }else {
             //Bad Request
         }
@@ -132,7 +134,23 @@ public class RequestHandler implements Runnable{
                         params.get("email")
                 )
         );
-        header = HttpResponseGenerator.generateHeader("302", 0);
+        header = HttpResponseGenerator.generateHeader("302", "/index.html", false);
+        responseHeader(dos, header);
+        responseBody(dos, new byte[0]);
+    }
+
+    private void handleSignIn(String requestBody, DataOutputStream dos){
+        Map<String, String> params = new HashMap<>();
+        String header = "";
+
+        params = HttpRequestUtils.parseQueryParameter(requestBody);
+        log.log(Level.INFO, "Sign In Request: " + requestBody);
+        try {
+            MemoryUserRepository.getInstance().findUserById(params.get("userId")).getPassword().equals(params.get("password"));
+            header = HttpResponseGenerator.generateHeader("302", "/index.html", true);
+        }catch (Exception e){
+            header = HttpResponseGenerator.generateHeader("302", "/user/login_failed.html", false);
+        }
         responseHeader(dos, header);
         responseBody(dos, new byte[0]);
     }
