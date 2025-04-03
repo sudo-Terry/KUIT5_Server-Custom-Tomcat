@@ -71,31 +71,35 @@ public class RequestHandler implements Runnable{
     // 1: HTTP Method에 따라 처리 로직 분기
     private void handleByRequestMethod(HttpRequest request, DataOutputStream dos) {
         if (request.getHttpMethod().equals("GET")) {
-            handleByGETRequestPath(request.getHttpUrl(), dos);
+            handleByGETRequestPath(request, dos);
         }else if (request.getHttpMethod().equals("POST")) {
-            handleByPOSTRequestPath(request.getHttpUrl(), request.getHttpBody(), dos);
+            handleByPOSTRequestPath(request, dos);
         }
     }
 
     // 2: URL에 따라 처리 로직 분기 (GET)
-    private void handleByGETRequestPath(String requestPath, DataOutputStream dos) {
+    private void handleByGETRequestPath(HttpRequest request, DataOutputStream dos) {
+        String requestPath = request.getHttpUrl();
         if (requestPath == null) {
             //Bad Request
             throw new RuntimeException("Invalid request path");
+        } if (requestPath.equals("/user/list.html")){
+            handleUserListReturn(request, dos);
         } else {
             handleFileReturn(requestPath, dos);
         }
     }
 
     // 2: URL에 따라 처리 로직 분기 (POST)
-    private void handleByPOSTRequestPath(String requestPath, String requestBody, DataOutputStream dos) {
+    private void handleByPOSTRequestPath(HttpRequest request, DataOutputStream dos) {
+        String requestPath = request.getHttpUrl();
         if (requestPath == null) {
             //Bad Request
             throw new RuntimeException("Invalid request path");
         }else if (requestPath.equals("/user/signup")) {
-            handleSignUp(requestBody, dos);
+            handleSignUp(request.getHttpBody(), dos);
         }else if (requestPath.equals("/user/login")) {
-            handleSignIn(requestBody, dos);
+            handleSignIn(request.getHttpBody(), dos);
         }else {
             //Bad Request
         }
@@ -153,6 +157,15 @@ public class RequestHandler implements Runnable{
         }
         responseHeader(dos, header);
         responseBody(dos, new byte[0]);
+    }
+
+    private void handleUserListReturn(HttpRequest request, DataOutputStream dos) {
+        if (request.getHttpHeader().containsKey("Cookie") && request.getHttpHeader().get("Cookie").contains("logined=true")) {
+            handleFileReturn(request.getHttpUrl(), dos);
+        }else{
+            responseHeader(dos, HttpResponseGenerator.generateHeader("302", "/user/login.html", false));
+            responseBody(dos, new byte[0]);
+        }
     }
 
     private void responseHeader(DataOutputStream dos, String response){

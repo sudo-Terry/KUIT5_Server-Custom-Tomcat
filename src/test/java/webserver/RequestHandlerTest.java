@@ -22,9 +22,9 @@ public class RequestHandlerTest {
     @ValueSource(strings = {
             "GET / HTTP/1.1\r\nHost: localhost \r\n\r\n",
             "GET /index.html HTTP/1.1\r\nHost: localhost \r\n\r\n",
-            "GET /user/list.html HTTP/1.\r\nHost: localhost \r\n\r\n1"
+            "GET /user/form.html HTTP/1.\r\nHost: localhost \r\n\r\n1"
     })
-    void testRunningGET(String getRequest) throws IOException {
+    void testRunning_GET(String getRequest) throws IOException {
         try (ServerSocket serverSocket = new ServerSocket(0)) {
             // 사용 가능한 포트 찾기
             int port = serverSocket.getLocalPort();
@@ -48,7 +48,7 @@ public class RequestHandlerTest {
     }
 
     @Test
-    void testRunningPOSTSignUp() throws IOException {
+    void testRunning_POST_SignUp() throws IOException {
         String postRequest = """
             POST /user/signup HTTP/1.1\r
             Host: localhost\r
@@ -81,7 +81,7 @@ public class RequestHandlerTest {
     }
 
     @Test
-    void testRunningPOSTSignInSuccess() throws IOException {
+    void testRunning_POST_SignInSuccess() throws IOException {
         String postRequest = """
             POST /user/login HTTP/1.1\r
             Host: localhost\r
@@ -122,7 +122,7 @@ public class RequestHandlerTest {
     }
 
     @Test
-    void testRunningPOSTSignInFail() throws IOException {
+    void testRunning_POST_SignInFail() throws IOException {
         String postRequest = """
             POST /user/login HTTP/1.1\r
             Host: localhost\r
@@ -151,6 +151,49 @@ public class RequestHandlerTest {
 
                 assertTrue(response.contains("HTTP/1.1 302 Found"));
                 assertFalse(response.contains("Set-Cookie: logined=true;"));
+            }
+        }
+    }
+
+    @Test
+    void testRunning_GET_UserListSignIned() throws IOException {
+        String getRequest = """
+        GET /user/list.html HTTP/1.1\r
+        Host: localhost\r
+        Cookie: logined=true;\r
+        \r
+        """;
+
+        testRunning_GET(getRequest);
+    }
+
+    @Test
+    void testRunning_GET_UserListSignOuted() throws IOException {
+        String getRequest = """
+        GET /user/list.html HTTP/1.1\r
+        Host: localhost\r
+        \r
+        """;
+
+        try (ServerSocket serverSocket = new ServerSocket(0)) {
+            // 사용 가능한 포트 찾기
+            int port = serverSocket.getLocalPort();
+
+            try (Socket clientSocket = new Socket("localhost", port);
+                 Socket serverSideSocket = serverSocket.accept()) {
+
+                OutputStream clientOutputStream = clientSocket.getOutputStream();
+                clientOutputStream.write(getRequest.getBytes());
+                clientOutputStream.flush();
+
+                RequestHandler requestHandler = new RequestHandler(serverSideSocket);
+                requestHandler.run();
+
+                InputStream clientInputStream = clientSocket.getInputStream();
+                String response = new String(clientInputStream.readAllBytes());
+
+                assertTrue(response.contains("HTTP/1.1 302 Found"));
+                assertTrue(response.contains("Location: /user/login.html"));
             }
         }
     }
