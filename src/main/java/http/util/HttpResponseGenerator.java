@@ -51,4 +51,19 @@ public class HttpResponseGenerator {
             throw new RuntimeException();
         }
     }
+
+    public static String generateCssHeader(String responseCode, int bodyLength){
+        if(responseCode == null || responseCode.isEmpty()){
+            throw new RuntimeException();
+        }else if (responseCode.equals("200")) {
+            return """
+                HTTP/1.1 200 OK\r
+                Content-Type: text/css;charset=utf-8\r
+                Content-Length: %d\r
+                \r
+                """.formatted(bodyLength);
+        }else {
+            throw new RuntimeException();
+        }
+    }
 }

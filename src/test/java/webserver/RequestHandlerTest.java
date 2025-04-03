@@ -22,7 +22,8 @@ public class RequestHandlerTest {
     @ValueSource(strings = {
             "GET / HTTP/1.1\r\nHost: localhost \r\n\r\n",
             "GET /index.html HTTP/1.1\r\nHost: localhost \r\n\r\n",
-            "GET /user/form.html HTTP/1.\r\nHost: localhost \r\n\r\n1"
+            "GET /user/form.html HTTP/1.\r\nHost: localhost \r\n\r\n",
+            "GET /css/styles.css HTTP/1.\r\nHost: localhost\r\nContent-type: text/css;charset=utf-8\r\n \r\n\r\n"
     })
     void testRunning_GET(String getRequest) throws IOException {
         try (ServerSocket serverSocket = new ServerSocket(0)) {

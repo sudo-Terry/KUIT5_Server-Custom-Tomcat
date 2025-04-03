@@ -83,7 +83,7 @@ public class RequestHandler implements Runnable{
         if (requestPath == null) {
             //Bad Request
             throw new RuntimeException("Invalid request path");
-        } if (requestPath.equals("/user/list.html")){
+        } else if (requestPath.equals("/user/list.html")) {
             handleUserListReturn(request, dos);
         } else {
             handleFileReturn(requestPath, dos);
@@ -110,15 +110,20 @@ public class RequestHandler implements Runnable{
         if (requestPath.equals("/")) requestPath = "/index.html";
 
         File file = new File(WEB_DOC_ROOT + requestPath);
-        String header; byte[] body;
+        String header = ""; byte[] body = new byte[0];
 
         if (!file.exists()) {
             String errorMessage = "<h1>404 Not Found</h1>";
             body = errorMessage.getBytes();
             header = HttpResponseGenerator.generateHeader("404", body.length);
-        } else {
+        } else if (requestPath.endsWith(".css")) {
+            try {body = Files.readAllBytes(file.toPath());} catch (IOException e) {throw new RuntimeException(e);}
+            header = HttpResponseGenerator.generateCssHeader("200", body.length);
+        } else if (requestPath.endsWith(".html")) {
             try {body = Files.readAllBytes(file.toPath());} catch (IOException e) {throw new RuntimeException(e);}
             header = HttpResponseGenerator.generateHeader("200", body.length);
+        } else{
+            //Bad Request? Lack of Permission? 둘 중 하나로 처리하며 될듯
         }
         responseHeader(dos, header);
         responseBody(dos, body);

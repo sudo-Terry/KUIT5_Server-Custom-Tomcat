@@ -64,6 +64,19 @@ class HttpResponseGeneratorTest {
         assertEquals(expectedHeader, actualHeader);
     }
 
+    @Test
+    void testGenerateCssHeader_200_OK() {
+        String expected = """
+            HTTP/1.1 200 OK\r
+            Content-Type: text/css;charset=utf-8\r
+            Content-Length: 150\r
+            \r
+            """;
+
+        String actual = HttpResponseGenerator.generateCssHeader("200", 150);
+
+        assertEquals(expected, actual);
+    }
 
     @Test
     void testGenerateHeader_NullResponseCode_ShouldThrowException() {
