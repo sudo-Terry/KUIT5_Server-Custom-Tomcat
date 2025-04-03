@@ -65,6 +65,7 @@ public class RequestHandler implements Runnable{
 
         HttpRequest request = new HttpRequest(requestLine, headers, body.toString());
         handleByRequestMethod(request, dos);
+        dos.flush();
     }
 
     // 1: HTTP Method에 따라 처리 로직 분기
@@ -147,7 +148,6 @@ public class RequestHandler implements Runnable{
     private void responseBody(DataOutputStream dos, byte[] body) {
         try {
             dos.write(body, 0, body.length);
-            dos.flush();
         } catch (IOException e) {
             log.log(Level.SEVERE, e.getMessage());
         }
